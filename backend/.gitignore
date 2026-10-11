@@ -1,0 +1,13 @@
+# Build tools
+target/
+*.jar
+*.war
+
+# IDE
+.vscode/
+.idea/
+*.iws
+*.iml
+
+# Environment
+.env
