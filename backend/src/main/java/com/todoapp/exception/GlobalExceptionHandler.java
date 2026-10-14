@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +32,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         return buildErrorResponse("VALIDATION_ERROR", message, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, String>> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+        return buildErrorResponse("FILE_TOO_LARGE", "Photo is too large. Maximum size is 25MB.", HttpStatus.PAYLOAD_TOO_LARGE);
+    }
+
+    @ExceptionHandler(PhotoTooLargeException.class)
+    public ResponseEntity<Map<String, String>> handlePhotoTooLarge(PhotoTooLargeException ex) {
+        return buildErrorResponse("FILE_TOO_LARGE", ex.getMessage(), HttpStatus.PAYLOAD_TOO_LARGE);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -99,7 +99,9 @@ public class TaskService {
         logRepository.save(log);
 
         Recurrence recurrence = task.getRecurrence();
-        if (recurrence != null && recurrence.getType() != RecurrenceType.NONE) {
+        // Hibernate instantiates the @Embedded Recurrence even when every column is null,
+        // so getType() can be null here. A missing type means "no recurrence" — treat it as such.
+        if (recurrence != null && recurrence.getType() != null && recurrence.getType() != RecurrenceType.NONE) {
             List<CompletionLog> logs = logRepository.findByTaskId(task.getId());
             boolean isCompletedAll = recurrence.getOccurrences() != null && logs.size() >= recurrence.getOccurrences();
 
@@ -152,13 +154,18 @@ public class TaskService {
         } else {
             task.setGoal(null);
         }
-        if (request.getDueDate() != null) task.setDueDate(LocalDate.parse(request.getDueDate()));
-        if (request.getDueTime() != null) task.setDueTime(LocalTime.parse(request.getDueTime()));
+        // The UI sends "" (not null) for blank date/time inputs — treat blank as absent.
+        if (hasText(request.getDueDate())) task.setDueDate(LocalDate.parse(request.getDueDate()));
+        if (hasText(request.getDueTime())) task.setDueTime(LocalTime.parse(request.getDueTime()));
         task.setExpectedDurationMinutes(request.getExpectedDurationMinutes());
-        if (request.getReminderDateTime() != null) {
+        if (hasText(request.getReminderDateTime())) {
             task.setReminderDateTime(LocalDateTime.parse(request.getReminderDateTime(), DateTimeFormatter.ISO_DATE_TIME));
         }
         task.setRecurrence(request.getRecurrence());
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private LocalDate computeNextDueDate(LocalDate current, Recurrence recurrence) {

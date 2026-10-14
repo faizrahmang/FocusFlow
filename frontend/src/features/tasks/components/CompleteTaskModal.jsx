@@ -4,14 +4,25 @@ export default function CompleteTaskModal({ task, onSubmit, onCancel }) {
   const [actualDurationMinutes, setActualDurationMinutes] = useState(task?.expectedDurationMinutes || "");
   const [note, setNote] = useState("");
   const [photoFile, setPhotoFile] = useState(null);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
-    onSubmit?.({
-      actualDurationMinutes: actualDurationMinutes ? Number(actualDurationMinutes) : null,
-      note: note || null,
-      photoFile,
-    });
+    setError(null);
+    setSubmitting(true);
+    try {
+      await onSubmit?.({
+        actualDurationMinutes: actualDurationMinutes ? Number(actualDurationMinutes) : null,
+        note: note || null,
+        photoFile,
+      });
+    } catch (err) {
+      // Keep the modal open so the user can retry (e.g. pick a smaller photo)
+      setError(err?.message || "Could not mark this task complete. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!task) return null;
@@ -53,8 +64,16 @@ export default function CompleteTaskModal({ task, onSubmit, onCancel }) {
 
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" onClick={onCancel} className="button-secondary">Cancel</button>
-          <button type="submit" className="button-primary">Mark complete</button>
+          <button type="submit" disabled={submitting} className="button-primary disabled:opacity-60">
+            {submitting ? "Saving…" : "Mark complete"}
+          </button>
         </div>
+
+        {error && (
+          <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
+            {error}
+          </p>
+        )}
       </form>
     </div>
   );
