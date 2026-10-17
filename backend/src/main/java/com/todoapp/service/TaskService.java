@@ -99,9 +99,10 @@ public class TaskService {
         logRepository.save(log);
 
         Recurrence recurrence = task.getRecurrence();
-        // Hibernate instantiates the @Embedded Recurrence even when every column is null,
-        // so getType() can be null here. A missing type means "no recurrence" — treat it as such.
-        if (recurrence != null && recurrence.getType() != null && recurrence.getType() != RecurrenceType.NONE) {
+        // Hibernate may instantiate the embedded recurrence even when its columns are null.
+        if (recurrence == null || recurrence.getType() == null || recurrence.getType() == RecurrenceType.NONE) {
+            task.setArchived(true);
+        } else {
             List<CompletionLog> logs = logRepository.findByTaskId(task.getId());
             boolean isCompletedAll = recurrence.getOccurrences() != null && logs.size() >= recurrence.getOccurrences();
 
@@ -115,8 +116,8 @@ public class TaskService {
             } else {
                 task.setDueDate(nextDueDate);
             }
-            taskRepository.save(task);
         }
+        taskRepository.save(task);
 
         return dtoMapper.toCompletionLogDTO(log);
     }
@@ -135,7 +136,8 @@ public class TaskService {
         LocalDateTime to = now.plusHours(1);
         
         return taskRepository.findByUserId(user.getId()).stream()
-                .filter(t -> t.getReminderDateTime() != null &&
+                .filter(t -> !t.getArchived() &&
+                             t.getReminderDateTime() != null &&
                              !t.getReminderDateTime().isBefore(from) &&
                              !t.getReminderDateTime().isAfter(to))
                 .map(dtoMapper::toTaskResponseDTO)
@@ -148,19 +150,18 @@ public class TaskService {
         task.setType(request.getType());
         task.setPriority(request.getPriority());
         if (request.getGoalId() != null) {
-            Goal goal = goalRepository.findById(request.getGoalId())
+            Goal goal = goalRepository.findByIdAndUserId(request.getGoalId(), task.getUser().getId())
                     .orElseThrow(() -> new GoalNotFoundException("Goal not found"));
             task.setGoal(goal);
         } else {
             task.setGoal(null);
         }
-        // The UI sends "" (not null) for blank date/time inputs — treat blank as absent.
-        if (hasText(request.getDueDate())) task.setDueDate(LocalDate.parse(request.getDueDate()));
-        if (hasText(request.getDueTime())) task.setDueTime(LocalTime.parse(request.getDueTime()));
+        task.setDueDate(hasText(request.getDueDate()) ? LocalDate.parse(request.getDueDate()) : null);
+        task.setDueTime(hasText(request.getDueTime()) ? LocalTime.parse(request.getDueTime()) : null);
         task.setExpectedDurationMinutes(request.getExpectedDurationMinutes());
-        if (hasText(request.getReminderDateTime())) {
-            task.setReminderDateTime(LocalDateTime.parse(request.getReminderDateTime(), DateTimeFormatter.ISO_DATE_TIME));
-        }
+        task.setReminderDateTime(hasText(request.getReminderDateTime())
+                ? LocalDateTime.parse(request.getReminderDateTime(), DateTimeFormatter.ISO_DATE_TIME)
+                : null);
         task.setRecurrence(request.getRecurrence());
     }
 
@@ -190,5 +191,4 @@ public class TaskService {
         return current.plusDays(1);
     }
 }
-
 

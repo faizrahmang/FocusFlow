@@ -98,7 +98,7 @@ One row per completed occurrence (this is how daily/weekly/monthly analytics and
 | PUT | `/api/tasks/{id}` | `TaskRequest` | `Task` |
 | DELETE | `/api/tasks/{id}` | — | 204 |
 | PATCH | `/api/tasks/reorder` | `[{id, position}]` | `Task[]` |
-| POST | `/api/tasks/{id}/complete` | multipart: `actualDurationMinutes`, `note`, `photo` (file, optional) | `CompletionLog` (201) — creates a completion log entry; if recurring, computes next due date |
+| POST | `/api/tasks/{id}/complete` | multipart: `actualDurationMinutes`, `note`, `photo` (file, optional) | `CompletionLog` (201) — creates a completion log entry; recurring tasks compute the next due date, and non-recurring or finished recurring tasks are archived |
 | GET | `/api/tasks/{id}/logs` | — | `CompletionLog[]` — history for one task |
 | GET | `/api/tasks/due-soon` | — | `Task[]` — tasks with `reminderDateTime` in the past/next hour, for in-app reminders |
 

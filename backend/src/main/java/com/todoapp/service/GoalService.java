@@ -66,12 +66,10 @@ public class GoalService {
     private void mapRequestToGoal(GoalRequestDTO request, Goal goal) {
         goal.setTitle(request.getTitle());
         goal.setType(request.getType());
-        // The UI sends "" (not null) for a blank target date — treat blank as absent.
-        if (request.getTargetDate() != null && !request.getTargetDate().isBlank()) {
-            goal.setTargetDate(LocalDate.parse(request.getTargetDate()));
-        }
+        goal.setTargetDate(request.getTargetDate() != null && !request.getTargetDate().isBlank()
+                ? LocalDate.parse(request.getTargetDate())
+                : null);
         goal.setLinkedTaskIds(request.getLinkedTaskIds());
     }
 }
-
 

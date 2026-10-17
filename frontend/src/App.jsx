@@ -21,7 +21,14 @@ import DueSoonBanner from "./shared/components/DueSoonBanner";
 import GoalList from "./features/goals/components/GoalList";
 
 export default function App() {
-  const { user, isAuthenticated, loading: authLoading, login, logout } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    loading: authLoading,
+    error: authError,
+    login,
+    logout,
+  } = useAuth();
   const { isDark, toggle: toggleDarkMode } = useDarkMode();
 
   const [typeFilter, setTypeFilter] = useState(undefined);
@@ -80,14 +87,73 @@ export default function App() {
   };
 
   if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
+    return <main className="auth-loading" role="status">Loading FocusFlow…</main>;
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <GoogleLoginButton onClick={login} />
-      </div>
+      <main className="auth-shell">
+        <section className="auth-story" aria-labelledby="auth-title">
+          <header className="auth-story-header">
+            <div className="brand-lockup">
+              <span className="brand-mark" aria-hidden="true">F</span>
+              <span>FocusFlow</span>
+            </div>
+            <DarkModeToggle isDark={isDark} onToggle={toggleDarkMode} />
+          </header>
+
+          <div className="story-copy">
+            <p className="eyebrow">A calmer way to get things done</p>
+            <h1 id="auth-title">Your next win starts here.</h1>
+            <p>
+              Turn busy days into clear, achievable progress with a todo space
+              that adapts to the way you work.
+            </p>
+          </div>
+
+          <div className="story-proof" aria-label="FocusFlow benefits">
+            <div>
+              <strong>Plan</strong>
+              <span>Turn ideas into focused steps.</span>
+            </div>
+            <div>
+              <strong>Track</strong>
+              <span>See momentum build every day.</span>
+            </div>
+            <div>
+              <strong>Reflect</strong>
+              <span>Learn what helps you move forward.</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="auth-panel" aria-labelledby="signin-title">
+          <div className="auth-card">
+            <div className="auth-card-heading">
+              <p className="eyebrow">Welcome back</p>
+              <h2 id="signin-title">Sign in to FocusFlow</h2>
+              <p>Pick up where you left off and make today count.</p>
+            </div>
+
+            {authError && (
+              <p className="auth-error" role="alert">
+                {authError.message || String(authError)}
+              </p>
+            )}
+
+            <div className="auth-alternative" aria-label="Sign in options">
+              <span aria-hidden="true" />
+              <p>Get started securely</p>
+              <span aria-hidden="true" />
+            </div>
+            <GoogleLoginButton onClick={login} />
+            <p className="auth-note">
+              New to FocusFlow? Your account will be created when you continue
+              with Google.
+            </p>
+          </div>
+        </section>
+      </main>
     );
   }
 
