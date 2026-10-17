@@ -14,10 +14,10 @@ const empty = {
 };
 
 const types = [
-  ["HABIT", "Habit"],
-  ["TASK", "Task"],
-  ["SKILL", "Skill"],
-  ["HEALTH", "Health"],
+  ["HABIT", "Habit", "↻", "Build a consistent routine"],
+  ["TASK", "Task", "✓", "Finish a specific to-do"],
+  ["SKILL", "Skill", "◆", "Grow a skill over time"],
+  ["HEALTH", "Health", "♥", "Support your well-being"],
 ];
 
 const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -74,10 +74,30 @@ export default function TaskForm({ initialValues, goals = [], onSubmit, onCancel
 
         <div className="md:col-span-2">
           <span className="label">Type</span>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {types.map(([value, label]) => (
-              <button type="button" key={value} onClick={() => set("type", value)} className={`rounded-xl border px-3 py-2.5 text-sm font-medium ${form.type === value ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300" : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300"}`}>
-                {label}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" role="group" aria-label="Task type">
+            {types.map(([value, label, icon, description]) => (
+              <button
+                type="button"
+                key={value}
+                onClick={() => set("type", value)}
+                aria-pressed={form.type === value}
+                className={`flex min-h-28 flex-col items-start rounded-2xl border p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
+                  form.type === value
+                    ? "border-blue-500 bg-blue-50 text-blue-800 shadow-sm dark:bg-blue-500/10 dark:text-blue-200"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+                }`}
+              >
+                <span className={`mb-2 grid h-8 w-8 place-items-center rounded-lg text-base ${
+                  form.type === value
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200"
+                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                }`} aria-hidden="true">
+                  {icon}
+                </span>
+                <span className="text-sm font-semibold">{label}</span>
+                <span className="mt-1 text-xs leading-4 text-slate-500 dark:text-slate-400">
+                  {description}
+                </span>
               </button>
             ))}
           </div>
