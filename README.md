@@ -90,7 +90,6 @@ Set-Location backend
 mvn test
 ```
 
-## Documentation
+## Architecture
 
-- [API contract](docs/API_CONTRACT.md)
-- [Project structure](docs/PROJECT_FOLDER_STRUCTURE.md)
+See the [architecture diagram](ARCHITECTURE.md) for the application components and their interactions.

@@ -1,0 +1,4 @@
+# Keep local planning/orchestration Markdown out of the repository.
+*.md
+!README.md
+!ARCHITECTURE.md
