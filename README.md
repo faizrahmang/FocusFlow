@@ -40,6 +40,7 @@ The backend reads configuration from environment variables. Set these before sta
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
 | `JWT_SECRET` | Secret used to sign authentication tokens |
+| `FRONTEND_URL` | Frontend origin allowed by CORS and used after Google sign-in |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret |
@@ -53,7 +54,7 @@ The frontend defaults to `http://localhost:8080` for the API. To use another bac
 VITE_API_URL=http://localhost:8080
 ```
 
-The backend uses port `8080` and redirects successful Google sign-ins to `http://localhost:5173`. Update the corresponding backend configuration if your local ports differ.
+The backend defaults to port `8080` and redirects successful Google sign-ins to `http://localhost:5173`. Set `FRONTEND_URL` to the deployed frontend's exact origin in production; the same origin is allowed by CORS. The backend honors the hosting provider's `PORT` environment variable.
 
 ## Run locally
 
@@ -89,6 +90,10 @@ Run backend tests:
 Set-Location backend
 mvn test
 ```
+
+## Deploy on Render
+
+The backend includes a Java 21 Dockerfile at `backend/Dockerfile`. Create a Render Web Service connected to this repository, choose Docker, set its root directory to `backend`, and set its Dockerfile path to `Dockerfile`. Configure the backend environment variables listed above in the Render dashboard. After deploying the frontend, set `FRONTEND_URL` to its exact HTTPS origin and redeploy the backend.
 
 ## Architecture
 
