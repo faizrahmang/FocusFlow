@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface CompletionLogRepository extends JpaRepository<CompletionLog, Long> {
     List<CompletionLog> findByTaskId(Long taskId);
+    List<CompletionLog> findByTask_UserIdOrderByCompletedAtDesc(Long userId);
     List<CompletionLog> findByTask_UserIdAndCompletedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
 }

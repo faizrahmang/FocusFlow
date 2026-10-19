@@ -18,6 +18,11 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("TASK_NOT_FOUND", ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(ChatbotException.class)
+    public ResponseEntity<Map<String, String>> handleChatbotException(ChatbotException ex) {
+        return buildErrorResponse("CHATBOT_UNAVAILABLE", ex.getMessage(), HttpStatus.BAD_GATEWAY);
+    }
+
     @ExceptionHandler(GoalNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleGoalNotFound(GoalNotFoundException ex) {
         return buildErrorResponse("GOAL_NOT_FOUND", ex.getMessage(), HttpStatus.NOT_FOUND);
@@ -66,4 +71,3 @@ public class GlobalExceptionHandler {
 // ==========================================
 // 2. DTO PACKAGE
 // ==========================================
-

@@ -31,6 +31,11 @@ public class TaskController {
         return ResponseEntity.ok(taskService.getTasks(user, type, archived, goalId));
     }
 
+    @GetMapping("/completions")
+    public ResponseEntity<List<CompletionLogDTO>> getCompletionHistory(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(taskService.getCompletionHistory(user));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<TaskResponseDTO> getTask(@AuthenticationPrincipal User user, @PathVariable Long id) {
         return ResponseEntity.ok(taskService.getTask(user, id));
@@ -84,5 +89,4 @@ public class TaskController {
         return ResponseEntity.ok(taskService.getDueSoon(user));
     }
 }
-
 

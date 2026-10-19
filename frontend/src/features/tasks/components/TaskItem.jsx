@@ -46,12 +46,12 @@ export default function TaskItem({
 
   return (
     <article
-      className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+      className="group rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 dark:hover:shadow-black/20 sm:p-6"
     >
       <div className="flex gap-4">
         <button
           onClick={() => onComplete?.(task)}
-          className="mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 border-slate-300 text-xs text-transparent transition hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-600 dark:border-slate-600 dark:hover:bg-emerald-500/10"
+          className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 border-slate-300 text-xs text-transparent transition hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 dark:border-slate-600 dark:hover:bg-emerald-500/10"
           aria-label={`Complete ${task.title}`}
         >
           ✓
@@ -60,12 +60,12 @@ export default function TaskItem({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <button onClick={() => onSelect?.(task)} className="text-left">
-              <h3 className="font-semibold text-slate-900 hover:text-blue-600 dark:text-slate-100 dark:hover:text-blue-400">
+              <h3 className="font-semibold tracking-tight text-slate-900 hover:text-blue-600 dark:text-slate-100 dark:hover:text-blue-400">
                 {task.title}
               </h3>
             </button>
 
-            <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${toneClasses[meta.tone]}`}>
+            <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${toneClasses[meta.tone]}`}>
               {meta.icon} {meta.label}
             </span>
           </div>
@@ -76,24 +76,24 @@ export default function TaskItem({
             </p>
           )}
 
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
-            {task.dueDate && <span>📅 {task.dueDate}</span>}
-            {task.dueTime && <span>◷ {task.dueTime}</span>}
-            {task.expectedDurationMinutes != null && <span>⏱ {task.expectedDurationMinutes} min</span>}
-            {recurrence && <span className="rounded-full bg-slate-100 px-2 py-1 dark:bg-slate-800">{recurrence}</span>}
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            {task.dueDate && <span className="rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/80">Due {task.dueDate}</span>}
+            {task.dueTime && <span className="rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/80">{task.dueTime}</span>}
+            {task.expectedDurationMinutes != null && <span className="rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/80">{task.expectedDurationMinutes} min</span>}
+            {recurrence && <span className="rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/80">{recurrence}</span>}
             <Priority value={task.priority} />
           </div>
 
-          <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+          <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
             <span className="text-xs text-slate-400">#{task.id}</span>
-            <div className="flex gap-1 opacity-70 transition group-hover:opacity-100">
-              <button onClick={() => onSelect?.(task)} className="rounded-lg px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+            <div className="flex gap-1">
+              <button onClick={() => onSelect?.(task)} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
                 Open
               </button>
-              <button onClick={() => onArchive?.(task.id)} className="rounded-lg px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+              <button onClick={() => onArchive?.(task.id)} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
                 Archive
               </button>
-              <button onClick={() => onDelete?.(task.id)} className="rounded-lg px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10">
+              <button onClick={() => onDelete?.(task.id)} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 dark:hover:bg-rose-500/10">
                 Delete
               </button>
             </div>

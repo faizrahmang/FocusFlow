@@ -130,6 +130,12 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    public List<CompletionLogDTO> getCompletionHistory(User user) {
+        return logRepository.findByTask_UserIdOrderByCompletedAtDesc(user.getId()).stream()
+                .map(dtoMapper::toCompletionLogDTO)
+                .collect(Collectors.toList());
+    }
+
     public List<TaskResponseDTO> getDueSoon(User user) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime from = now.minusHours(1);
@@ -191,4 +197,3 @@ public class TaskService {
         return current.plusDays(1);
     }
 }
-

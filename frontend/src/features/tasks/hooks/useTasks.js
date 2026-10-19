@@ -11,6 +11,9 @@ export function useTasks(filters = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dueSoonTasks, setDueSoonTasks] = useState([]);
+  const [completionHistory, setCompletionHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState(null);
 
   // Keep latest filters in a ref so stable callbacks always use current values
   const filtersRef = useRef(filters);
@@ -49,6 +52,21 @@ export function useTasks(filters = {}) {
     }
   }, []);
 
+  const refetchCompletionHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const res = await api.get('/api/tasks/completions');
+      setCompletionHistory(res.data);
+      return res.data;
+    } catch (err) {
+      setHistoryError(err.message);
+      return null;
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
   // Initial load + refetch whenever filters change
   useEffect(() => {
     setLoading(true);
@@ -61,6 +79,10 @@ export function useTasks(filters = {}) {
     const id = setInterval(fetchDueSoon, DUE_SOON_POLL_MS);
     return () => clearInterval(id);
   }, [fetchDueSoon]);
+
+  useEffect(() => {
+    refetchCompletionHistory();
+  }, [refetchCompletionHistory]);
 
   const createTask = useCallback(
     async (taskRequest) => {
@@ -125,9 +147,10 @@ export function useTasks(filters = {}) {
       });
       await refetch();
       await fetchDueSoon();
+      await refetchCompletionHistory();
       return res.data; // CompletionLog
     },
-    [refetch, fetchDueSoon]
+    [refetch, fetchDueSoon, refetchCompletionHistory]
   );
 
   return {
@@ -140,6 +163,9 @@ export function useTasks(filters = {}) {
     reorderTasks,
     completeTask,
     dueSoonTasks,
+    completionHistory,
+    historyLoading,
+    historyError,
     refetch,
   };
 }

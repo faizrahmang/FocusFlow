@@ -62,6 +62,8 @@ public class DtoMapper {
         CompletionLogDTO dto = new CompletionLogDTO();
         dto.setId(log.getId());
         dto.setTaskId(log.getTask() != null ? log.getTask().getId() : null);
+        dto.setTaskTitle(log.getTask() != null ? log.getTask().getTitle() : null);
+        dto.setTaskType(log.getTask() != null ? log.getTask().getType() : null);
         dto.setCompletedAt(log.getCompletedAt() != null ? log.getCompletedAt().format(ISO_FORMATTER) : null);
         dto.setActualDurationMinutes(log.getActualDurationMinutes());
         dto.setPhotoUrl(log.getPhotoUrl());
@@ -86,4 +88,3 @@ public class DtoMapper {
 // ==========================================
 // 3. SECURITY PACKAGE
 // ==========================================
-

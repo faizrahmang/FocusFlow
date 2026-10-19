@@ -1,13 +1,13 @@
 import { useState } from "react";
 
-export default function ChatbotPanel({ messages = [], onSend, activeTaskTitle = null, loading = false }) {
+export default function ChatbotPanel({ messages = [], onSend, activeTaskTitle = null, loading = false, error = null }) {
   const [text, setText] = useState("");
 
-  const send = (event) => {
+  const send = async (event) => {
     event.preventDefault();
     if (!text.trim() || loading) return;
-    onSend?.(text.trim());
-    setText("");
+    const result = await onSend?.(text.trim());
+    if (result !== null) setText("");
   };
 
   return (
@@ -40,6 +40,11 @@ export default function ChatbotPanel({ messages = [], onSend, activeTaskTitle = 
         })}
 
         {loading && <div className="text-xs text-slate-400">Coach is thinking…</div>}
+        {error && (
+          <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+            {error}
+          </p>
+        )}
       </div>
 
       <form onSubmit={send} className="border-t border-slate-100 p-3 dark:border-slate-800">

@@ -4,6 +4,7 @@ import api from '../../../shared/api/client';
 export function useChatbot() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [activeTaskId, setActiveTaskId] = useState(null); // null = general coaching chat
   const activeTaskIdRef = useRef(activeTaskId);
   activeTaskIdRef.current = activeTaskId;
@@ -12,15 +13,16 @@ export function useChatbot() {
   useEffect(() => {
     let cancelled = false;
     setMessages([]);
-    if (activeTaskId === null) {
-      return; // general chat: no history to load (or load all history if backend supports it)
-    }
-    api
-      .get('/api/chatbot/history', { params: { taskId: activeTaskId } })
+    setError(null);
+    api.get('/api/chatbot/history', {
+      params: activeTaskId === null ? {} : { taskId: activeTaskId },
+    })
       .then((res) => {
         if (!cancelled) setMessages(res.data);
       })
-      .catch((err) => console.warn('chat history fetch failed:', err.message));
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      });
     return () => { cancelled = true; };
   }, [activeTaskId]);
 
@@ -28,11 +30,13 @@ export function useChatbot() {
     async (text) => {
       const trimmed = text.trim();
       if (!trimmed) return;
+      const taskId = activeTaskIdRef.current;
+      setError(null);
 
       const optimisticUser = {
         id: `local-${Date.now()}`,
         userId: null,
-        taskId: activeTaskIdRef.current,
+        taskId,
         role: 'user',
         content: trimmed,
         createdAt: new Date().toISOString(),
@@ -42,15 +46,19 @@ export function useChatbot() {
 
       try {
         const res = await api.post('/api/chatbot/message', {
-          taskId: activeTaskIdRef.current,
+          taskId,
           message: trimmed,
         });
-        setMessages((prev) => [...prev, res.data]);
+        if (activeTaskIdRef.current === taskId) {
+          setMessages((prev) => [...prev, res.data]);
+        }
         return res.data;
       } catch (err) {
-        // Roll back the optimistic message on failure
-        setMessages((prev) => prev.filter((m) => m.id !== optimisticUser.id));
-        throw err;
+        if (activeTaskIdRef.current === taskId) {
+          setMessages((prev) => prev.filter((m) => m.id !== optimisticUser.id));
+          setError(err.message || 'The AI coach could not respond. Please try again.');
+        }
+        return null;
       } finally {
         setLoading(false);
       }
@@ -58,5 +66,5 @@ export function useChatbot() {
     []
   );
 
-  return { messages, loading, sendMessage, activeTaskId, setActiveTaskId };
+  return { messages, loading, error, sendMessage, activeTaskId, setActiveTaskId };
 }
