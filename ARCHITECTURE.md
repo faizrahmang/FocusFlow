@@ -11,7 +11,7 @@ flowchart LR
     Repositories[Spring Data JPA repositories]
     Database[(PostgreSQL)]
     Google[Google OAuth]
-    Gemini[Gemini API]
+    Groq[Groq API<br/>Qwen 3.8 27B]
     Cloudinary[Cloudinary]
 
     User --> Browser
@@ -24,7 +24,7 @@ flowchart LR
     Controllers --> Services
     Services --> Repositories
     Repositories --> Database
-    Services -->|AI coaching requests| Gemini
+    Services -->|AI coaching requests| Groq
     Services -->|Completion photo storage| Cloudinary
 ```
 
@@ -33,4 +33,4 @@ flowchart LR
 - Google OAuth authenticates a user through the backend. On success, the backend issues a JWT to the frontend.
 - The frontend sends the JWT with requests to protected `/api/**` endpoints.
 - Controllers delegate application operations to services. Services use repositories to read and write PostgreSQL data.
-- The chatbot service calls Gemini for AI responses, while photo uploads are stored with Cloudinary.
+- The chatbot service calls Groq for AI responses, while photo uploads are stored with Cloudinary.

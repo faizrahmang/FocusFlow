@@ -33,8 +33,8 @@ public class ChatbotService {
     @Autowired private TaskRepository taskRepository;
     @Autowired private DtoMapper dtoMapper;
 
-    @Value("${gemini.api.key}")
-    private String geminiApiKey;
+    @Value("${groq.api.key:}")
+    private String groqApiKey;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -52,7 +52,7 @@ public class ChatbotService {
         List<ChatMessage> history = taskId == null
                 ? chatMessageRepository.findByUserIdAndTaskIsNullOrderByCreatedAtAscIdAsc(user.getId())
                 : chatMessageRepository.findByUserIdAndTaskIdOrderByCreatedAtAscIdAsc(user.getId(), taskId);
-        String assistantReply = callGeminiApi(buildSystemContext(user, task), history, messageText);
+        String assistantReply = callGroqApi(buildSystemContext(user, task), history, messageText);
 
         ChatMessage userMsg = new ChatMessage();
         userMsg.setUser(user);
@@ -95,13 +95,14 @@ public class ChatbotService {
         return sb.toString();
     }
 
-    private String callGeminiApi(String context, List<ChatMessage> history, String userPrompt) {
-        if (geminiApiKey == null || geminiApiKey.isBlank()) {
-            throw new ChatbotException("The chatbot is unavailable because GEMINI_API_KEY is not configured.");
+    private String callGroqApi(String context, List<ChatMessage> history, String userPrompt) {
+        if (groqApiKey == null || groqApiKey.isBlank()) {
+            throw new ChatbotException("The chatbot is unavailable because GROQ_API_KEY is not configured.");
         }
 
-        String url = "https://generativelanguage.googleapis.com/v1beta/interactions";
-        StringBuilder conversation = new StringBuilder();
+        String url = "https://api.groq.com/openai/v1/chat/completions";
+        List<Map<String, Object>> messages = new ArrayList<>();
+        messages.add(Map.of("role", "system", "content", context));
         int firstMessage = Math.max(0, history.size() - MAX_CONTEXT_MESSAGES);
         if (firstMessage < history.size() && "assistant".equals(history.get(firstMessage).getRole())) {
             firstMessage++;
@@ -109,25 +110,21 @@ public class ChatbotService {
         for (int i = firstMessage; i < history.size(); i++) {
             ChatMessage previousMessage = history.get(i);
             if ("user".equals(previousMessage.getRole())) {
-                conversation.append("User: ");
+                messages.add(Map.of("role", "user", "content", previousMessage.getContent()));
             } else if ("assistant".equals(previousMessage.getRole())) {
-                conversation.append("Assistant: ");
-            } else {
-                continue;
+                messages.add(Map.of("role", "assistant", "content", previousMessage.getContent()));
             }
-            conversation.append(previousMessage.getContent()).append("\n\n");
         }
-        conversation.append("User: ").append(userPrompt);
+        messages.add(Map.of("role", "user", "content", userPrompt));
 
         Map<String, Object> requestBody = Map.of(
-                "model", "gemini-3.8-flash",
-                "system_instruction", context,
-                "input", conversation.toString(),
-                "store", false);
+                "model", "qwen/qwen3.8-27b",
+                "messages", messages,
+                "max_completion_tokens", 1024);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-goog-api-key", geminiApiKey);
+        headers.setBearerAuth(groqApiKey);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
@@ -137,54 +134,44 @@ public class ChatbotService {
         } catch (HttpStatusCodeException e) {
             int status = e.getStatusCode().value();
             String errorDetails = e.getResponseBodyAsString();
-            if (geminiApiKey != null && !geminiApiKey.isBlank()) {
-                errorDetails = errorDetails.replace(geminiApiKey, "[REDACTED]");
+            if (groqApiKey != null && !groqApiKey.isBlank()) {
+                errorDetails = errorDetails.replace(groqApiKey, "[REDACTED]");
             }
             if (errorDetails.length() > 1000) {
                 errorDetails = errorDetails.substring(0, 1000);
             }
-            log.warn("Gemini API returned HTTP status {}: {}", status, errorDetails);
+            log.warn("Groq API returned HTTP status {}: {}", status, errorDetails);
             if (status == 401 || status == 403) {
-                throw new ChatbotException("Gemini rejected the API key or does not have access to the selected model.");
+                throw new ChatbotException("Groq rejected the API key or does not have access to the selected model.");
             }
             if (status == 429) {
-                throw new ChatbotException("The Gemini request limit has been reached. Please try again later.");
+                throw new ChatbotException("The Groq request limit has been reached. Please try again later.");
             }
             if (status == 404) {
-                throw new ChatbotException("The configured Gemini model is unavailable. Please check the backend model configuration.");
+                throw new ChatbotException("The configured Groq model is unavailable. Please check the backend model configuration.");
             }
-            throw new ChatbotException("Gemini could not process the request. Please try again.");
+            if (status == 503) {
+                throw new ChatbotException("Groq is temporarily unavailable. Please try again shortly.");
+            }
+            throw new ChatbotException("Groq could not process the request. Please try again.");
         } catch (ResourceAccessException e) {
-            log.warn("Could not connect to Gemini API");
-            throw new ChatbotException("Could not connect to Gemini. Check your internet connection and try again.");
+            log.warn("Could not connect to Groq API");
+            throw new ChatbotException("Could not connect to Groq. Please try again shortly.");
         }
 
         Map<?, ?> body = response.getBody();
-        Object stepsValue = body != null ? body.get("steps") : null;
-        if (!(stepsValue instanceof List<?> steps) || steps.isEmpty()) {
-            throw new ChatbotException("Gemini returned no response. Please try rephrasing your message.");
+        Object choicesValue = body != null ? body.get("choices") : null;
+        if (!(choicesValue instanceof List<?> choices) || choices.isEmpty()) {
+            throw new ChatbotException("Groq returned no response. Please try rephrasing your message.");
         }
 
-        StringBuilder assistantText = new StringBuilder();
-        for (Object stepValue : steps) {
-            if (!(stepValue instanceof Map<?, ?> step) || !"model_output".equals(step.get("type"))) {
-                continue;
-            }
-            Object contentValue = step.get("content");
-            if (!(contentValue instanceof List<?> content)) {
-                continue;
-            }
-            for (Object partValue : content) {
-                if (partValue instanceof Map<?, ?> part && "text".equals(part.get("type"))
-                        && part.get("text") instanceof String text) {
-                    assistantText.append(text);
-                }
-            }
+        Object firstChoice = choices.get(0);
+        Object messageValue = firstChoice instanceof Map<?, ?> choice ? choice.get("message") : null;
+        Object contentValue = messageValue instanceof Map<?, ?> message ? message.get("content") : null;
+        if (!(contentValue instanceof String assistantText) || assistantText.isBlank()) {
+            throw new ChatbotException("Groq returned an empty response. Please try again.");
         }
-        if (assistantText.isEmpty() || assistantText.toString().isBlank()) {
-            throw new ChatbotException("Gemini returned an empty response. Please try again.");
-        }
-        return assistantText.toString();
+        return assistantText;
     }
 }
 

@@ -16,7 +16,7 @@ FocusFlow is a task, habit, goal, and skill-tracking app with progress analytics
 - Frontend: React 19, Vite, Tailwind CSS, Recharts, Axios
 - Backend: Java 21, Spring Boot 3.4, Spring Data JPA, Spring Security
 - Database: PostgreSQL
-- Integrations: Google OAuth 2.0, Gemini API, Cloudinary
+- Integrations: Google OAuth 2.0, Groq API (Qwen), Cloudinary
 
 ## Prerequisites
 
@@ -26,7 +26,7 @@ FocusFlow is a task, habit, goal, and skill-tracking app with progress analytics
 - A PostgreSQL database
 - Google OAuth client credentials
 - Cloudinary credentials
-- A Gemini API key for AI coaching
+- A Groq API key for AI coaching
 
 ## Configuration
 
@@ -44,7 +44,7 @@ The backend reads configuration from environment variables. Set these before sta
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret |
-| `GEMINI_API_KEY` | Gemini API key used for AI coaching |
+| `GROQ_API_KEY` | Groq API key used for AI coaching |
 
 Keep credentials out of source control. For local development, configure them in your shell or in a local environment file that is excluded from Git.
 
