@@ -100,27 +100,30 @@ public class ChatbotService {
             throw new ChatbotException("The chatbot is unavailable because GEMINI_API_KEY is not configured.");
         }
 
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
-
-        List<Map<String, Object>> contents = new ArrayList<>();
+        String url = "https://generativelanguage.googleapis.com/v1beta/interactions";
+        StringBuilder conversation = new StringBuilder();
         int firstMessage = Math.max(0, history.size() - MAX_CONTEXT_MESSAGES);
         if (firstMessage < history.size() && "assistant".equals(history.get(firstMessage).getRole())) {
             firstMessage++;
         }
         for (int i = firstMessage; i < history.size(); i++) {
             ChatMessage previousMessage = history.get(i);
-            if (!"user".equals(previousMessage.getRole()) && !"assistant".equals(previousMessage.getRole())) {
+            if ("user".equals(previousMessage.getRole())) {
+                conversation.append("User: ");
+            } else if ("assistant".equals(previousMessage.getRole())) {
+                conversation.append("Assistant: ");
+            } else {
                 continue;
             }
-            contents.add(Map.of(
-                    "role", "assistant".equals(previousMessage.getRole()) ? "model" : "user",
-                    "parts", List.of(Map.of("text", previousMessage.getContent()))));
+            conversation.append(previousMessage.getContent()).append("\n\n");
         }
-        contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", userPrompt))));
+        conversation.append("User: ").append(userPrompt);
 
         Map<String, Object> requestBody = Map.of(
-                "systemInstruction", Map.of("parts", List.of(Map.of("text", context))),
-                "contents", contents);
+                "model", "gemini-3.8-flash",
+                "system_instruction", context,
+                "input", conversation.toString(),
+                "store", false);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -147,6 +150,9 @@ public class ChatbotService {
             if (status == 429) {
                 throw new ChatbotException("The Gemini request limit has been reached. Please try again later.");
             }
+            if (status == 404) {
+                throw new ChatbotException("The configured Gemini model is unavailable. Please check the backend model configuration.");
+            }
             throw new ChatbotException("Gemini could not process the request. Please try again.");
         } catch (ResourceAccessException e) {
             log.warn("Could not connect to Gemini API");
@@ -154,24 +160,31 @@ public class ChatbotService {
         }
 
         Map<?, ?> body = response.getBody();
-        Object candidatesValue = body != null ? body.get("candidates") : null;
-        if (!(candidatesValue instanceof List<?> candidates) || candidates.isEmpty()) {
+        Object stepsValue = body != null ? body.get("steps") : null;
+        if (!(stepsValue instanceof List<?> steps) || steps.isEmpty()) {
             throw new ChatbotException("Gemini returned no response. Please try rephrasing your message.");
         }
 
-        Object candidateValue = candidates.get(0);
-        Object contentValue = candidateValue instanceof Map<?, ?> candidate ? candidate.get("content") : null;
-        Object partsValue = contentValue instanceof Map<?, ?> content ? content.get("parts") : null;
-        if (!(partsValue instanceof List<?> parts) || parts.isEmpty()) {
-            throw new ChatbotException("Gemini returned no response. Please try rephrasing your message.");
+        StringBuilder assistantText = new StringBuilder();
+        for (Object stepValue : steps) {
+            if (!(stepValue instanceof Map<?, ?> step) || !"model_output".equals(step.get("type"))) {
+                continue;
+            }
+            Object contentValue = step.get("content");
+            if (!(contentValue instanceof List<?> content)) {
+                continue;
+            }
+            for (Object partValue : content) {
+                if (partValue instanceof Map<?, ?> part && "text".equals(part.get("type"))
+                        && part.get("text") instanceof String text) {
+                    assistantText.append(text);
+                }
+            }
         }
-
-        Object firstPartValue = parts.get(0);
-        Object textValue = firstPartValue instanceof Map<?, ?> firstPart ? firstPart.get("text") : null;
-        if (!(textValue instanceof String text) || text.isBlank()) {
+        if (assistantText.isEmpty() || assistantText.toString().isBlank()) {
             throw new ChatbotException("Gemini returned an empty response. Please try again.");
         }
-        return text;
+        return assistantText.toString();
     }
 }
 
