@@ -8,7 +8,7 @@ FocusFlow is a task, habit, goal, and skill-tracking app with progress analytics
 - Create, organize, schedule, and complete tasks, habits, skills, and health activities
 - Set goals and track completion history
 - View progress analytics and upcoming reminders
-- Chat with an AI coach about general goals or a specific task
+- Chat with a self-development coach about goals, fitness, habits, learning, productivity, and general wellbeing
 - Use light or dark mode
 
 ## Tech stack
